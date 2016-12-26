@@ -4,13 +4,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sun.misc.Regexp;
 
 import java.io.IOException;
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,8 +26,6 @@ public class Main {
 
             Connection connection = DriverManager.getConnection("jdbc:postgresql://10.254.202.49:10054/rlsnet", "postgres", "postgres");
 
-            //Весь алфавит
-            List<String> searchPanel = new ArrayList<>();
             for (Element element : alphaList) {
                 if (!element.attr("href").isEmpty()) {
                     String url = element.attr("href");
