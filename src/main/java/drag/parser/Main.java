@@ -32,6 +32,7 @@ public class Main {
                     //Список лекарств на определенную букву
                     Elements pills = Jsoup.connect(url).get().body().select("div.tn_alf_list > ul > li > a:not(:has(.monetkaElem))");
 
+                    //предотвратить дубли ID
                     Set<String> indexes = new HashSet<>();
 
                     for (Element pill : pills) {
