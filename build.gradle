@@ -1,0 +1,10 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile group: 'org.jsoup', name: 'jsoup', version: '1.8.3'
+}
