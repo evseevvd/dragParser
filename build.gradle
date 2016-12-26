@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'idea'
 
 repositories {
 	mavenCentral()
@@ -7,4 +8,5 @@ repositories {
 
 dependencies {
 	compile group: 'org.jsoup', name: 'jsoup', version: '1.8.3'
+	compile group: 'org.postgresql', name: 'postgresql', version: '9.4.1212'
 }

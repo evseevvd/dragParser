@@ -4,33 +4,59 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sun.misc.Regexp;
 
 import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by evseevvd on 26.12.16.
  */
 public class Main {
 
-    public static void main(String[] args) {
-        try {
+    public static void main(String[] args) throws SQLException, IOException {
             Document document = Jsoup.connect("http://www.rlsnet.ru").get();
             Elements alphaList = document.body().select("div.tn_letters_main > div.tn_letters").get(0).getAllElements();
 
+            Connection connection = DriverManager.getConnection("jdbc:postgresql://10.254.202.49:10054/rlsnet", "postgres", "postgres");
+
+            //Весь алфавит
             List<String> searchPanel = new ArrayList<>();
             for (Element element : alphaList) {
                 if (!element.attr("href").isEmpty()) {
-                    searchPanel.add(element.attr("href"));
+                    String url = element.attr("href");
+                    //Список лекарств на определенную букву
+                    Elements pills = Jsoup.connect(url).get().body().select("div.tn_alf_list > ul > li > a:not(:has(.monetkaElem))");
+
+                    Set<String> indexes = new HashSet<>();
+
+                    for (Element pill : pills) {
+                        Matcher indexMatcher = Pattern.compile("\\d+").matcher(pill.attr("href"));
+                        indexMatcher.find();
+                        String index = indexMatcher.group();
+
+                        //TODO мб есть смысл проверять урлы, на тот случай если пилульки разные а ID один
+
+                        if (pill.text().length() < 2000 && !indexes.contains(index)) {
+
+                            PreparedStatement statement = connection.prepareStatement("INSERT INTO RLS.PILL_STORE (ID, NAME, URL) VALUES (?, ?, ?)");
+                            statement.setString(1, index);
+                            statement.setString(2, pill.text());
+                            statement.setString(3, pill.attr("href"));
+                            statement.execute();
+
+                            indexes.add(index);
+                        }
+                    }
+
+                    indexes.clear();
                 }
             }
-
-            for (String url : searchPanel) {
-                Elements select = Jsoup.connect(url).get().body().select("div.tn_alf_list > ul > li");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
