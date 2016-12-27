@@ -10,9 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +20,8 @@ import java.util.regex.Pattern;
  */
 public class Main {
 
+    private static int totalCount = 0;
+
     public static void main(String[] args) throws SQLException, IOException {
         Document document = Jsoup.connect("http://www.rlsnet.ru").get();
 
@@ -29,31 +29,13 @@ public class Main {
 
         Connection connection = DriverManager.getConnection("jdbc:postgresql://10.254.202.49:10054/rlsnet", "postgres", "postgres");
 
-        List<String> errorUrls = new ArrayList<>();
-
         for (Element element : alphaList) {
             if (!element.attr("href").isEmpty()) {
                 String url = element.attr("href");
                 //Список лекарств на определенную букву
-                Elements pills = new Elements();
-
-                org.jsoup.Connection httpCon = Jsoup.connect(url)
-                        .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.21 (KHTML, like Gecko) Chrome/19.0.1042.0 Safari/535.21")
-                        .timeout(10000)
-                        .ignoreHttpErrors(true);
-
-                org.jsoup.Connection.Response response = httpCon.execute();
-
-                if (response.statusCode() == 200) {
-                    pills = httpCon.get().body().select("div.tn_alf_list > ul > li > a:not(:has(.monetkaElem))");
-                } else {
-                    //FIXME если урл не смог ответить,
-                    // то кладем его в список ошибочных,
-                    // т.е. надо придумать механизм который N раз создавал коннект и если не удалось,
-                    // то писал урл в БД как ошибочный
-                    errorUrls.add(url);
-                }
-
+                Elements pills = getPillsWithReconnect(url);
+                //сброс кол-ва попыток
+                totalCount = 0;
                 //предотвратить дубли ID
                 Set<String> indexes = new HashSet<>();
 
@@ -79,5 +61,22 @@ public class Main {
                 indexes.clear();
             }
         }
+
+    }
+
+    //FIXME наблюдается
+    private static Elements getPillsWithReconnect(String url) throws IOException {
+
+        org.jsoup.Connection httpCon = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.21 (HTML, like Gecko) Chrome/19.0.1042.0 Safari/535.21")
+                .timeout(10000)
+                .ignoreHttpErrors(true);
+        org.jsoup.Connection.Response response = httpCon.execute();
+
+        if (response.statusCode() != 200 && totalCount < 3) {
+            totalCount++;
+            getPillsWithReconnect(url);
+        }
+        return httpCon.get().body().select("div.tn_alf_list > ul > li > a:not(:has(.monetkaElem))");
     }
 }
