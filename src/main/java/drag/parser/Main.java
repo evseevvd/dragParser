@@ -27,7 +27,7 @@ public class Main {
 
         Elements alphaList = document.body().select("div.tn_letters_main > div.tn_letters").get(0).getAllElements();
 
-        Connection connection = DriverManager.getConnection("jdbc:postgresql://10.254.202.49:10054/rlsnet", "postgres", "postgres");
+        Connection connection = DriverManager.getConnection("jdbc:postgresql://192.168.10.14:21054/drugstore", "druger", "druger");
 
         for (Element element : alphaList) {
             if (!element.attr("href").isEmpty()) {
@@ -48,7 +48,7 @@ public class Main {
 
                     if (pill.text().length() < 2000 && !indexes.contains(index)) {
 
-                        PreparedStatement statement = connection.prepareStatement("INSERT INTO RLS.PILL_STORE (ID, NAME, URL) VALUES (?, ?, ?)");
+                        PreparedStatement statement = connection.prepareStatement("INSERT INTO drugsm.pills (ID, NAME, URL) VALUES (?, ?, ?)");
                         statement.setString(1, index);
                         statement.setString(2, pill.text());
                         statement.setString(3, pill.attr("href"));
@@ -64,7 +64,7 @@ public class Main {
 
     }
 
-    //FIXME наблюдается
+    //FIXME с первого раза не парсит все лекарства
     private static Elements getPillsWithReconnect(String url) throws IOException {
 
         org.jsoup.Connection httpCon = Jsoup.connect(url)
